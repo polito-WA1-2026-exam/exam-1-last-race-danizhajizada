@@ -11,7 +11,10 @@ import {
   failGame,
 } from './API';
 import LoginPage from './pages/LoginPage';
+import GamePage from './pages/GamePage';
+import RankingPage from './pages/RankingPage';
 import Navigation from './components/Navigation';
+import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
 function App() {
@@ -25,6 +28,7 @@ function App() {
   const [gameResult, setGameResult] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadInitialData() {
@@ -34,6 +38,8 @@ function App() {
         await loadPrivateData();
       } catch {
         setUser(null);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -151,7 +157,7 @@ function App() {
     return () => clearTimeout(timerId);
   }, [timerActive, timeLeft]);
 
-  async function handleNewGame() {
+  async function handlePlay() {
     try {
       const newGame = await createGame();
 
@@ -218,213 +224,69 @@ function App() {
     }
   }
 
-  function GamePage() {
+  function renderPrivatePage(pageContent) {
     return (
-      <>
-        <section className="card">
-          <h2>Game</h2>
+      <ProtectedRoute user={user}>
+        <Navigation user={user} onLogout={handleLogout} />
 
-          <button onClick={handleNewGame}>New Game</button>
+        <main className="page">
+          {message && <p className="message">{message}</p>}
 
-          {game && (
-            <div>
-              <p>
-                Start station: <strong>{game.startStation.name}</strong>
-              </p>
-              <p>
-                Destination station:{' '}
-                <strong>{game.destinationStation.name}</strong>
-              </p>
-              <p>Initial coins: {game.initialCoins}</p>
-              <p>Status: {game.status}</p>
-            </div>
-          )}
-
-          {game && game.status === 'created' && (
-            <>
-              <p>
-                Planning time left:{' '}
-                <strong className={timeLeft <= 10 ? 'danger' : ''}>
-                  {timeLeft}
-                </strong>{' '}
-                seconds
-              </p>
-
-              {network && (
-                <>
-                  <h3>Available segments</h3>
-
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Segment</th>
-                        <th>Line</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {network.segments.map((segment) => (
-                        <tr key={segment.id}>
-                          <td>{segment.id}</td>
-                          <td>
-                            {segment.station1_name} ↔ {segment.station2_name}
-                          </td>
-                          <td>{segment.line_name}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </>
-              )}
-
-              <form onSubmit={handlePlanRoute} className="form">
-                <label>
-                  Segment IDs, separated by commas
-                  <input
-                    value={segmentInput}
-                    onChange={(event) => setSegmentInput(event.target.value)}
-                    placeholder="Example: 4,3,2"
-                  />
-                </label>
-
-                <button type="submit" disabled={timeLeft <= 0}>
-                  Plan Route
-                </button>
-              </form>
-            </>
-          )}
-
-          {plannedRoute && (
-            <div>
-              <h3>Planned route</h3>
-              <ol>
-                {plannedRoute.route.map((step) => (
-                  <li key={step.position}>
-                    {step.fromStation.name} → {step.toStation.name} on{' '}
-                    {step.lineName}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          {game && game.status === 'planned' && (
-            <button onClick={handleRunGame}>Run Game</button>
-          )}
-
-          {gameResult && (
-            <div>
-              <h3>
-                {(gameResult.execution ?? []).length > 0
-                  ? 'Execution result'
-                  : 'Game result'}
-              </h3>
-
-              <p>
-                Final score: <strong>{gameResult.finalScore}</strong>
-              </p>
-
-              {gameResult.reason && <p>{gameResult.reason}</p>}
-
-              {(gameResult.execution ?? []).length > 0 && (
-                <ol>
-                  {gameResult.execution.map((step) => (
-                    <li key={step.position}>
-                      {step.fromStation.name} → {step.toStation.name} on{' '}
-                      {step.lineName}
-                      <br />
-                      Event: {step.event.description} (
-                      {step.event.coinEffect > 0 ? '+' : ''}
-                      {step.event.coinEffect} coins)
-                      <br />
-                      Coins: {step.coinsBefore} → {step.coinsAfter}
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </div>
-          )}
-        </section>
-
-        <section className="card">
-          <h2>Network loaded from server</h2>
-
-          {network ? (
-            <ul>
-              <li>Lines: {network.lines.length}</li>
-              <li>Stations: {network.stations.length}</li>
-              <li>Segments: {network.segments.length}</li>
-              <li>Events: {network.events.length}</li>
-            </ul>
-          ) : (
-            <p>Loading network...</p>
-          )}
-        </section>
-      </>
+          {pageContent}
+        </main>
+      </ProtectedRoute>
     );
   }
 
-  function RankingPage() {
+  if (loading) {
     return (
-      <section className="card">
-        <h2>Ranking</h2>
-
-        {ranking.length === 0 ? (
-          <p>No completed games yet.</p>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Position</th>
-                <th>User</th>
-                <th>Best score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ranking.map((row) => (
-                <tr key={row.userId}>
-                  <td>{row.position}</td>
-                  <td>{row.username}</td>
-                  <td>{row.bestScore}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+      <main className="page">
+        <p className="message">Loading...</p>
+      </main>
     );
   }
 
   return (
-    <main className="page">
-      {user && <Navigation user={user} onLogout={handleLogout} />}
+    <Routes>
+      <Route
+        path="/"
+        element={
+          user ? (
+            <Navigate to="/game" replace />
+          ) : (
+            <LoginPage onLogin={handleLoginSuccess} />
+          )
+        }
+      />
 
-      {message && <p className="message">{message}</p>}
+      <Route
+        path="/game"
+        element={renderPrivatePage(
+          <GamePage
+            network={network}
+            game={game}
+            timeLeft={timeLeft}
+            segmentInput={segmentInput}
+            plannedRoute={plannedRoute}
+            gameResult={gameResult}
+            onPlay={handlePlay}
+            onPlanRoute={handlePlanRoute}
+            onSegmentInputChange={setSegmentInput}
+            onRunGame={handleRunGame}
+          />
+        )}
+      />
 
-      <Routes>
-        <Route
-          path="/"
-          element={
-            user ? <Navigate to="/game" /> : <LoginPage onLogin={handleLoginSuccess} />
-          }
-        />
+      <Route
+        path="/ranking"
+        element={renderPrivatePage(<RankingPage ranking={ranking} />)}
+      />
 
-        <Route
-          path="/game"
-          element={user ? <GamePage /> : <Navigate to="/" />}
-        />
-
-        <Route
-          path="/ranking"
-          element={user ? <RankingPage /> : <Navigate to="/" />}
-        />
-
-        <Route
-          path="*"
-          element={<Navigate to={user ? '/game' : '/'} />}
-        />
-      </Routes>
-    </main>
+      <Route
+        path="*"
+        element={<Navigate to={user ? '/game' : '/'} replace />}
+      />
+    </Routes>
   );
 }
 

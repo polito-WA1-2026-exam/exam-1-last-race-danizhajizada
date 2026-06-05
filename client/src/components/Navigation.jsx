@@ -1,20 +1,16 @@
-import { NavLink } from 'react-router-dom';
-
 function Navigation({ user, onLogout }) {
   return (
-    <header className="card nav-bar">
-      <div>
-        <strong>Last Race</strong>
-      </div>
+    <header className="top-bar">
+      <div className="top-bar-brand">Last Race</div>
 
-      <nav className="nav-links">
-        <NavLink to="/game">Game</NavLink>
-        <NavLink to="/ranking">Ranking</NavLink>
-      </nav>
+      <div className="top-bar-user">
+        <div className="default-avatar"></div>
 
-      <div className="nav-user">
-        <span>{user.username}</span>
-        <button onClick={onLogout}>Logout</button>
+        <span className="username">{user.username}</span>
+
+        <button onClick={onLogout} className="logout-button">
+          Logout
+        </button>
       </div>
     </header>
   );
