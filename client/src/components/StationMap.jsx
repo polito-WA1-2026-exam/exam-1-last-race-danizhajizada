@@ -17,7 +17,7 @@ const stationPositions = {
   'Giardini Nebbia': { x: 640, y: 320 },
 };
 
-function StationMap({ network, game, hideStationNames = false }) {
+function StationMap({ network, game, hideStationNames = false, hideLines  = false }) {
   if (!network) {
     return null;
   }
@@ -31,45 +31,38 @@ function StationMap({ network, game, hideStationNames = false }) {
   }
 
   function getStationLabel(stationName) {
-    if (isStartStation(stationName)) {
-      return 'Start';
-    }
-
-    if (isDestinationStation(stationName)) {
-      return 'Destination';
-    }
-
-    if (hideStationNames) {
-      return '';
-    }
-
-    return stationName;
+  if (hideStationNames) {
+    return '';
   }
+
+  return stationName;
+}
 
   return (
     <div className="station-map">
       <svg viewBox="0 0 720 390" className="station-map-svg">
-        {network.segments.map((segment) => {
-          const start = stationPositions[segment.station1_name];
-          const end = stationPositions[segment.station2_name];
+        {!hideLines &&
+  network.segments.map((segment) => {
+    const start = stationPositions[segment.station1_name];
+    const end = stationPositions[segment.station2_name];
 
-          if (!start || !end) {
-            return null;
-          }
+    if (!start || !end) {
+      return null;
+    }
 
-          return (
-            <line
-              key={segment.id}
-              x1={start.x}
-              y1={start.y}
-              x2={end.x}
-              y2={end.y}
-              stroke={getLineColor(segment.line_name)}
-              strokeWidth="8"
-              strokeLinecap="round"
-            />
-          );
-        })}
+    return (
+      <line
+        key={segment.id}
+        x1={start.x}
+        y1={start.y}
+        x2={end.x}
+        y2={end.y}
+        stroke={getLineColor(segment.line_name)}
+        strokeWidth="8"
+        strokeLinecap="round"
+      />
+    );
+  })}
 
         {network.stations.map((station) => {
           const position = stationPositions[station.name];

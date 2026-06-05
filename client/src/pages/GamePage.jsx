@@ -167,7 +167,9 @@ function GamePage({
           <StationMap
             network={network}
             game={game}
-            hideStationNames={Boolean(game)}
+            hideStationNames={false}
+            hideLines={Boolean(game)}
+
           />
         </section>
       )}
