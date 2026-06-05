@@ -84,5 +84,27 @@ td {
 }
 
 .login-card {
-  max-width: 400px;
+  max-width: 420px;
+  margin: 1.5rem auto;
+  text-align: center;
+}
+
+.login-card .form {
+  max-width: 320px;
+  margin: 0 auto;
+  align-items: stretch;
+}
+
+.login-card label {
+  text-align: center;
+  font-weight: 500;
+}
+
+.login-card input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.login-card button {
+  width: 100%;
 }
