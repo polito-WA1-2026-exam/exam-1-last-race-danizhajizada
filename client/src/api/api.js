@@ -10,49 +10,23 @@ async function getJson(response) {
   return json;
 }
 
-export async function login(username, password) {
-  const response = await fetch(`${SERVER_URL}/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ username, password }),
-  });
-
-  return await getJson(response);
-}
-
-export async function logout() {
-  const response = await fetch(`${SERVER_URL}/logout`, {
-    method: 'POST',
+async function getNetwork() {
+  const response = await fetch(`${SERVER_URL}/network`, {
     credentials: 'include',
   });
 
   return await getJson(response);
 }
 
-export async function getCurrentUser() {
-  const response = await fetch(`${SERVER_URL}/sessions/current`, {
+async function getRanking() {
+  const response = await fetch(`${SERVER_URL}/ranking`, {
     credentials: 'include',
   });
 
   return await getJson(response);
 }
 
-export async function getNetwork() {
-  const response = await fetch(`${SERVER_URL}/network`);
-
-  return await getJson(response);
-}
-
-export async function getRanking() {
-  const response = await fetch(`${SERVER_URL}/ranking`);
-
-  return await getJson(response);
-}
-
-export async function createGame() {
+async function createGame() {
   const response = await fetch(`${SERVER_URL}/games`, {
     method: 'POST',
     credentials: 'include',
@@ -61,7 +35,7 @@ export async function createGame() {
   return await getJson(response);
 }
 
-export async function getGame(gameId) {
+async function getGame(gameId) {
   const response = await fetch(`${SERVER_URL}/games/${gameId}`, {
     credentials: 'include',
   });
@@ -69,12 +43,10 @@ export async function getGame(gameId) {
   return await getJson(response);
 }
 
-export async function planGame(gameId, segmentIds) {
+async function planGame(gameId, segmentIds) {
   const response = await fetch(`${SERVER_URL}/games/${gameId}/plan`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify({ segments: segmentIds }),
   });
@@ -82,7 +54,7 @@ export async function planGame(gameId, segmentIds) {
   return await getJson(response);
 }
 
-export async function runGame(gameId) {
+async function runGame(gameId) {
   const response = await fetch(`${SERVER_URL}/games/${gameId}/run`, {
     method: 'POST',
     credentials: 'include',
@@ -91,7 +63,7 @@ export async function runGame(gameId) {
   return await getJson(response);
 }
 
-export async function failGame(gameId) {
+async function failGame(gameId) {
   const response = await fetch(`${SERVER_URL}/games/${gameId}/fail`, {
     method: 'POST',
     credentials: 'include',
@@ -99,3 +71,13 @@ export async function failGame(gameId) {
 
   return await getJson(response);
 }
+
+export {
+  getNetwork,
+  getRanking,
+  createGame,
+  getGame,
+  planGame,
+  runGame,
+  failGame,
+};
