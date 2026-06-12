@@ -6,14 +6,24 @@ function GamePage({
   network,
   game,
   timeLeft,
-  segmentInput,
+  selectedSegments,
   plannedRoute,
   gameResult,
   onPlay,
   onPlanRoute,
-  onSegmentInputChange,
+  onSelectSegment,
+  onRemoveSegment,
+  onClearSegments,
   onRunGame,
 }) {
+  const segmentsById = new Map(
+    (network?.segments ?? []).map((segment) => [segment.id, segment])
+  );
+
+  const selectedRoute = selectedSegments
+    .map((id) => segmentsById.get(id))
+    .filter(Boolean);
+
   return (
     <>
       <section className="card">
@@ -53,6 +63,50 @@ function GamePage({
               seconds
             </p>
 
+            <h3>Your route</h3>
+
+            {selectedRoute.length === 0 ? (
+              <p>
+                No segments selected yet. Use the “Add” buttons below to build
+                your route in order.
+              </p>
+            ) : (
+              <ol className="route-list">
+                {selectedRoute.map((segment) => (
+                  <li key={segment.id} className="route-list-item">
+                    <span>
+                      {segment.station1_name} ↔ {segment.station2_name}
+                    </span>
+                    <button
+                      type="button"
+                      className="route-remove"
+                      onClick={() => onRemoveSegment(segment.id)}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            <div className="plan-actions">
+              <button
+                type="button"
+                onClick={onPlanRoute}
+                disabled={timeLeft <= 0 || selectedRoute.length === 0}
+              >
+                Plan Route
+              </button>
+
+              <button
+                type="button"
+                onClick={onClearSegments}
+                disabled={selectedRoute.length === 0}
+              >
+                Clear
+              </button>
+            </div>
+
             {network && (
               <>
                 <h3>Available segments</h3>
@@ -61,50 +115,50 @@ function GamePage({
                   <table>
                     <thead>
                       <tr>
-                        <th>ID</th>
                         <th>Segment</th>
                         <th>Line</th>
+                        <th></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {network.segments.map((segment) => (
-                        <tr key={segment.id}>
-                          <td>{segment.id}</td>
-                          <td>
-                            {segment.station1_name} ↔ {segment.station2_name}
-                          </td>
-                          <td>
-  <span
-    className="line-badge"
-    style={{ '--line-color': getLineColor(segment.line_name) }}
-  >
-    {segment.line_name}
-  </span>
-</td>
-                        </tr>
-                      ))}
+                      {network.segments.map((segment) => {
+                        const alreadySelected =
+                          selectedSegments.includes(segment.id);
+
+                        return (
+                          <tr key={segment.id}>
+                            <td>
+                              {segment.station1_name} ↔ {segment.station2_name}
+                            </td>
+                            <td>
+                              <span
+                                className="line-badge"
+                                style={{
+                                  '--line-color': getLineColor(
+                                    segment.line_name
+                                  ),
+                                }}
+                              >
+                                {segment.line_name}
+                              </span>
+                            </td>
+                            <td>
+                              <button
+                                type="button"
+                                onClick={() => onSelectSegment(segment.id)}
+                                disabled={alreadySelected || timeLeft <= 0}
+                              >
+                                {alreadySelected ? 'Added' : 'Add'}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               </>
             )}
-
-            <form onSubmit={onPlanRoute} className="form">
-              <label>
-                Segment IDs, separated by commas
-                <input
-                  value={segmentInput}
-                  onChange={(event) =>
-                    onSegmentInputChange(event.target.value)
-                  }
-                  placeholder="Example: 4,3,2"
-                />
-              </label>
-
-              <button type="submit" disabled={timeLeft <= 0}>
-                Plan Route
-              </button>
-            </form>
           </>
         )}
 
@@ -169,25 +223,9 @@ function GamePage({
             game={game}
             hideStationNames={false}
             hideLines={Boolean(game)}
-
           />
         </section>
       )}
-
-      <section className="card">
-        <h2>Network loaded from server</h2>
-
-        {network ? (
-          <ul>
-            <li>Lines: {network.lines.length}</li>
-            <li>Stations: {network.stations.length}</li>
-            <li>Segments: {network.segments.length}</li>
-            <li>Events: {network.events.length}</li>
-          </ul>
-        ) : (
-          <p>Loading network...</p>
-        )}
-      </section>
     </>
   );
 }

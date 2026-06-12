@@ -23,7 +23,8 @@ function App() {
   const [ranking, setRanking] = useState([]);
   const [message, setMessage] = useState('');
   const [game, setGame] = useState(null);
-  const [segmentInput, setSegmentInput] = useState('');
+  // Ordered list of segment ids the player has selected for this route.
+  const [selectedSegments, setSelectedSegments] = useState([]);
   const [plannedRoute, setPlannedRoute] = useState(null);
   const [gameResult, setGameResult] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -64,7 +65,7 @@ function App() {
 
   function clearGameState() {
     setGame(null);
-    setSegmentInput('');
+    setSelectedSegments([]);
     setPlannedRoute(null);
     setGameResult(null);
     setTimeLeft(0);
@@ -92,6 +93,22 @@ function App() {
     }
   }
 
+  function handleSelectSegment(segmentId) {
+    setSelectedSegments((current) =>
+      current.includes(segmentId) ? current : [...current, segmentId]
+    );
+  }
+
+  function handleRemoveSegment(segmentId) {
+    setSelectedSegments((current) =>
+      current.filter((id) => id !== segmentId)
+    );
+  }
+
+  function handleClearSegments() {
+    setSelectedSegments([]);
+  }
+
   async function handleTimeExpired() {
     if (!game || game.status !== 'created') {
       return;
@@ -100,14 +117,9 @@ function App() {
     try {
       let result;
 
-      const segmentIds = segmentInput
-        .split(',')
-        .map((value) => Number(value.trim()))
-        .filter((value) => Number.isInteger(value));
-
-      if (segmentIds.length > 0) {
+      if (selectedSegments.length > 0) {
         try {
-          const planned = await planGame(game.id, segmentIds);
+          const planned = await planGame(game.id, selectedSegments);
 
           setPlannedRoute(planned);
           setGame({
@@ -162,7 +174,7 @@ function App() {
       const newGame = await createGame();
 
       setGame(newGame);
-      setSegmentInput('');
+      setSelectedSegments([]);
       setPlannedRoute(null);
       setGameResult(null);
 
@@ -175,21 +187,19 @@ function App() {
     }
   }
 
-  async function handlePlanRoute(event) {
-    event.preventDefault();
-
+  async function handlePlanRoute() {
     if (timeLeft <= 0) {
       setMessage('Time is over! You cannot plan this route anymore.');
       return;
     }
 
-    try {
-      const segmentIds = segmentInput
-        .split(',')
-        .map((value) => Number(value.trim()))
-        .filter((value) => Number.isInteger(value));
+    if (selectedSegments.length === 0) {
+      setMessage('Select at least one segment before planning your route.');
+      return;
+    }
 
-      const result = await planGame(game.id, segmentIds);
+    try {
+      const result = await planGame(game.id, selectedSegments);
 
       setPlannedRoute(result);
       setGame({
@@ -266,12 +276,14 @@ function App() {
             network={network}
             game={game}
             timeLeft={timeLeft}
-            segmentInput={segmentInput}
+            selectedSegments={selectedSegments}
             plannedRoute={plannedRoute}
             gameResult={gameResult}
             onPlay={handlePlay}
             onPlanRoute={handlePlanRoute}
-            onSegmentInputChange={setSegmentInput}
+            onSelectSegment={handleSelectSegment}
+            onRemoveSegment={handleRemoveSegment}
+            onClearSegments={handleClearSegments}
             onRunGame={handleRunGame}
           />
         )}
