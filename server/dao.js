@@ -241,7 +241,6 @@ export async function seedDB() {
       'Porta Velaria',
       'Crocevia del Falco',
       'Piazza delle Lanterne',
-      'Mercato Antico',
     ],
     'Blue Line': [
       'Centrale',
@@ -251,14 +250,12 @@ export async function seedDB() {
       'Arco Solare',
     ],
     'Green Line': [
-      'Porta Velaria',
       'Fontana Oscura',
       'Torre Cinerea',
       "Campo dell'Eco",
       'Giardini Nebbia',
     ],
     'Yellow Line': [
-      'Piazza delle Lanterne',
       'Torre Cinerea',
       'Viale dei Mosaici',
       "Campo dell'Eco",
@@ -600,16 +597,16 @@ export async function planGameRoute(gameId, userId, segmentIds) {
       error: 'Route must contain at least one segment',
     };
   }
- 
+
   const uniqueSegmentIds = new Set(segmentIds);
- 
+
   if (uniqueSegmentIds.size !== segmentIds.length) {
     return {
       valid: false,
       error: 'A segment cannot be selected more than once',
     };
   }
- 
+
   const game = await dbGet(
     `
     SELECT *
@@ -619,7 +616,7 @@ export async function planGameRoute(gameId, userId, segmentIds) {
     `,
     [gameId, userId]
   );
- 
+
   if (!game) {
     return {
       valid: false,
@@ -627,16 +624,16 @@ export async function planGameRoute(gameId, userId, segmentIds) {
       statusCode: 404,
     };
   }
- 
+
   if (game.status !== 'created' && game.status !== 'planned') {
     return {
       valid: false,
       error: 'This game cannot be planned anymore',
     };
   }
- 
+
   const placeholders = segmentIds.map(() => '?').join(',');
- 
+
   const segments = await dbAll(
     `
     SELECT
@@ -655,34 +652,40 @@ export async function planGameRoute(gameId, userId, segmentIds) {
     `,
     segmentIds
   );
- 
+
   if (segments.length !== segmentIds.length) {
     return {
       valid: false,
       error: 'One or more selected segments do not exist',
     };
   }
- 
+
   const segmentMap = new Map();
- 
+
   for (const segment of segments) {
     segmentMap.set(segment.id, segment);
   }
- 
+
+  const allStations = await dbAll('SELECT id, name FROM stations');
+  const nameOf = (stationId) => {
+    const station = allStations.find((s) => s.id === stationId);
+    return station ? station.name : `station #${stationId}`;
+  };
+
   let currentStationId = game.start_station_id;
   let previousLineId = null;
- 
+
   const orientedRoute = [];
- 
+
   for (let i = 0; i < segmentIds.length; i++) {
     const segmentId = segmentIds[i];
     const segment = segmentMap.get(segmentId);
- 
+
     let fromStationId;
     let fromStationName;
     let toStationId;
     let toStationName;
- 
+
     if (segment.station1_id === currentStationId) {
       fromStationId = segment.station1_id;
       fromStationName = segment.station1_name;
@@ -696,10 +699,10 @@ export async function planGameRoute(gameId, userId, segmentIds) {
     } else {
       return {
         valid: false,
-        error: `Segment ${segmentId} does not connect to the current station`,
+        error: `Step ${i + 1} (${segment.station1_name} ↔ ${segment.station2_name}) does not continue from ${nameOf(currentStationId)}. Each segment must start where the previous one ended (your route begins at ${nameOf(game.start_station_id)}).`,
       };
     }
- 
+
     if (previousLineId !== null && previousLineId !== segment.line_id) {
       const interchange = await dbGet(
         `
@@ -710,15 +713,15 @@ export async function planGameRoute(gameId, userId, segmentIds) {
         `,
         [fromStationId]
       );
- 
+
       if (!interchange || interchange.line_count < 2) {
         return {
           valid: false,
-          error: 'Line changes are allowed only at interchange stations',
+          error: `Step ${i + 1}: you change line at ${fromStationName}, but line changes are only allowed at interchange stations.`,
         };
       }
     }
- 
+
     orientedRoute.push({
       segmentId: segment.id,
       lineId: segment.line_id,
@@ -733,18 +736,18 @@ export async function planGameRoute(gameId, userId, segmentIds) {
       },
       position: i + 1,
     });
- 
+
     currentStationId = toStationId;
     previousLineId = segment.line_id;
   }
- 
+
   if (currentStationId !== game.destination_station_id) {
     return {
       valid: false,
-      error: 'Route does not end at the destination station',
+      error: `Your route ends at ${nameOf(currentStationId)}, but it must end at the destination ${nameOf(game.destination_station_id)}.`,
     };
   }
- 
+
   await dbRun(
     `
     DELETE FROM planned_segments
@@ -752,7 +755,7 @@ export async function planGameRoute(gameId, userId, segmentIds) {
     `,
     [gameId]
   );
- 
+
   for (const routeStep of orientedRoute) {
     await dbRun(
       `
@@ -762,7 +765,7 @@ export async function planGameRoute(gameId, userId, segmentIds) {
       [gameId, routeStep.segmentId, routeStep.position]
     );
   }
- 
+
   await dbRun(
     `
     UPDATE games
@@ -771,7 +774,7 @@ export async function planGameRoute(gameId, userId, segmentIds) {
     `,
     [gameId]
   );
- 
+
   return {
     valid: true,
     gameId,
@@ -892,7 +895,7 @@ export async function runGame(gameId, userId) {
     const randomEvent = events[Math.floor(Math.random() * events.length)];
  
     const coinsBefore = coins;
-    coins = Math.max(0, coins + randomEvent.coin_effect);
+    coins = coins + randomEvent.coin_effect;
  
     await dbRun(
       `
@@ -934,7 +937,9 @@ export async function runGame(gameId, userId) {
  
     currentStationId = toStation.id;
   }
- 
+
+  const finalScore = Math.max(0, coins);
+
   await dbRun(
     `
     UPDATE games
@@ -942,15 +947,15 @@ export async function runGame(gameId, userId) {
         final_score = ?
     WHERE id = ?
     `,
-    [coins, gameId]
+    [finalScore, gameId]
   );
- 
+
   return {
     valid: true,
     gameId,
     status: 'completed',
     initialCoins: game.initial_coins,
-    finalScore: coins,
+    finalScore,
     execution,
   };
 }
