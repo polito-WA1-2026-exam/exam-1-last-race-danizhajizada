@@ -1,0 +1,40 @@
+.station-map {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.station-map-svg {
+  width: 100%;
+  max-width: 760px;
+  min-width: 620px;
+  display: block;
+  margin: 0 auto;
+}
+
+.station-label {
+  font-size: 12px;
+  fill: #333;
+  font-weight: 600;
+}
+
+.map-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.map-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.map-legend-color {
+  width: 18px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
