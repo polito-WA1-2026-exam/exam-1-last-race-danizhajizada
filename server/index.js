@@ -122,7 +122,7 @@ app.get('/api/sessions/current', (req, res) => {
   }
 });
 
-app.get('/api/network', async (req, res) => {
+app.get('/api/network', isLoggedIn, async (req, res) => {
   try {
     const network = await getNetwork();
     res.json(network);
@@ -234,7 +234,7 @@ app.post('/api/games/:id/fail', isLoggedIn, async (req, res) => {
   }
 });
 
-app.get('/api/ranking', async (req, res) => {
+app.get('/api/ranking', isLoggedIn, async (req, res) => {
   try {
     const ranking = await getRanking();
     res.json(ranking);

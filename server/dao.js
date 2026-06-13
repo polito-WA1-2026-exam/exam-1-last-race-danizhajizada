@@ -331,42 +331,17 @@ export async function seedDB() {
 }
  
 export async function getNetwork() {
-  const lines = await dbAll(`
-    SELECT *
-    FROM lines
-    ORDER BY id
-  `);
- 
   const stations = await dbAll(`
     SELECT *
     FROM stations
     ORDER BY id
   `);
- 
-  const lineStations = await dbAll(`
-    SELECT 
-      ls.id,
-      ls.line_id,
-      l.name AS line_name,
-      l.color AS line_color,
-      ls.station_id,
-      s.name AS station_name,
-      ls.position
-    FROM line_stations ls
-    JOIN lines l ON ls.line_id = l.id
-    JOIN stations s ON ls.station_id = s.id
-    ORDER BY ls.line_id, ls.position
-  `);
- 
+
   const segments = await dbAll(`
-    SELECT 
+    SELECT
       seg.id,
-      seg.line_id,
       l.name AS line_name,
-      l.color AS line_color,
-      seg.station1_id,
       s1.name AS station1_name,
-      seg.station2_id,
       s2.name AS station2_name
     FROM segments seg
     JOIN lines l ON seg.line_id = l.id
@@ -374,19 +349,10 @@ export async function getNetwork() {
     JOIN stations s2 ON seg.station2_id = s2.id
     ORDER BY seg.id
   `);
- 
-  const events = await dbAll(`
-    SELECT *
-    FROM events
-    ORDER BY id
-  `);
- 
+
   return {
-    lines,
     stations,
-    lineStations,
     segments,
-    events,
   };
 }
  

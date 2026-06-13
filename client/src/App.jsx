@@ -1,7 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './components/custom.css';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Container, Spinner } from 'react-bootstrap';
 import { Navigate, Outlet, Route, Routes, useNavigate } from 'react-router';
 
@@ -35,7 +35,6 @@ function App() {
   const [plannedRoute, setPlannedRoute] = useState(null);
   const [gameResult, setGameResult] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [timerActive, setTimerActive] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Restore the session at startup.
@@ -77,7 +76,6 @@ function App() {
     setPlannedRoute(null);
     setGameResult(null);
     setTimeLeft(0);
-    setTimerActive(false);
   }
 
   async function handleLogin(loggedUser) {
@@ -145,7 +143,7 @@ function App() {
     setMessage('');
   }
 
-  async function handleTimeExpired() {
+  const handleTimeExpired = useCallback(async () => {
     if (!game || game.status !== 'created') {
       return;
     }
@@ -182,25 +180,26 @@ function App() {
     } catch (err) {
       setMessage(err.message);
     }
-  }
+  }, [game, selectedSegments]);
 
+  // Tick the countdown down while a game is in the planning phase,
+  // and fail the game once it reaches zero.
   useEffect(() => {
-    if (!timerActive) {
-      return;
-    }
-
-    if (timeLeft <= 0) {
-      setTimerActive(false);
-      handleTimeExpired();
+    if (!game || game.status !== 'created' || timeLeft <= 0) {
       return;
     }
 
     const timerId = setTimeout(() => {
-      setTimeLeft((currentTime) => currentTime - 1);
+      if (timeLeft <= 1) {
+        setTimeLeft(0);
+        handleTimeExpired();
+      } else {
+        setTimeLeft((currentTime) => currentTime - 1);
+      }
     }, 1000);
 
     return () => clearTimeout(timerId);
-  }, [timerActive, timeLeft]);
+  }, [game, timeLeft, handleTimeExpired]);
 
   async function handlePlay() {
     try {
@@ -212,7 +211,6 @@ function App() {
       setGameResult(null);
 
       setTimeLeft(90);
-      setTimerActive(true);
 
       setMessage('New game created. You have 90 seconds to plan your route.');
     } catch (err) {
@@ -230,8 +228,6 @@ function App() {
       setMessage('Select at least one segment before planning your route.');
       return;
     }
-
-    setTimerActive(false);
 
     try {
       const result = await planGame(game.id, selectedSegments);
