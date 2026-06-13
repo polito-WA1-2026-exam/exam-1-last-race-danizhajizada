@@ -12,7 +12,7 @@ import RankingPage from './components/RankingPage.jsx';
 
 import UserContext from './contexts/UserContext.js';
 
-import { login, logout, getCurrentUser } from './api/auth.js';
+import { logout, getCurrentUser } from './api/auth.js';
 import {
   getNetwork,
   getRanking,

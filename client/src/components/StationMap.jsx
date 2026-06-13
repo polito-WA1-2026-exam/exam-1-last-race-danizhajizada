@@ -1,4 +1,4 @@
-import { getLineBaseName, getLineColor, lineColors } from '../utils/lineColours';
+import { getLineColor, lineColors } from '../utils/lineColours';
 
 const stationPositions = {
   Centrale: { x: 80, y: 80 },

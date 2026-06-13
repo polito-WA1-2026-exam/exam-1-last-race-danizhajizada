@@ -45,16 +45,6 @@ export function dbRun(sql, params = []) {
   });
 }
  
-/**
- * Temporary test function.
- * Later we will replace/add many real game functions.
- */
-export async function getTestMessage() {
-  return {
-    message: 'DAO is working',
-  };
-}
- 
 function hashPassword(password, salt) {
   return crypto.scryptSync(password, salt, 64).toString('hex');
 }

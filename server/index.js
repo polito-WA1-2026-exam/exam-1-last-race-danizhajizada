@@ -5,9 +5,9 @@ import cors from 'cors';
 import session from 'express-session';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
-import { getTestMessage, initDB, seedDB, getNetwork, getUserByUsername, 
-  getUserById, checkPassword,  createGame, getGameById,  planGameRoute, runGame,
-getRanking, failGame } from './dao.js';
+import { initDB, seedDB, getNetwork, getUserByUsername,
+  getUserById, checkPassword, createGame, getGameById, planGameRoute, runGame,
+  getRanking, failGame } from './dao.js';
 // init express
 const app = new express();
 const port = 3001;
@@ -119,16 +119,6 @@ app.get('/api/sessions/current', (req, res) => {
     res.json(req.user);
   } else {
     res.status(401).json({ error: 'Not authenticated' });
-  }
-});
-
-app.get('/api/test', async (req, res) => {
-  try {
-    const result = await getTestMessage();
-    res.json(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
