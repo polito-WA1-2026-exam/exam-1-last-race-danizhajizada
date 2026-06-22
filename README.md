@@ -73,9 +73,12 @@
 - `RankingPage` (in `RankingPage.jsx`): fetches and displays the global ranking with each user's best score.
 
 
-## Screenshot
+## Screenshots
 
-![Screenshot](./img/screenshot.jpg)
+![Startup](./img/Startup_img.png)
+![Ranking](./img/Ranking.png)
+![In Game](./img/In_game.png)
+![In Game, cntd.](./img/In_game_2.png)
 
 ## Users Credentials
 
