@@ -34,6 +34,21 @@
   - request body: `{ segments: number[] }` - ordered list of segment ids
   - response (valid route): `{ valid: true, gameId, status: 'planned', route: [{ segmentId, lineId, lineName, fromStation, toStation, position }] }`
   - response (invalid route): `400` with `{ error: string }`
+- POST `/api/games/:id/run`
+  - requires login
+  - URL parameter: `id` - game id
+  - executes the planned route: for each segment draws a random event, updates the coin balance, stores the final score and marks the game `completed`
+  - response: `{ valid: true, gameId, status: 'completed', initialCoins, finalScore, execution: [{ position, segmentId, lineId, lineName, fromStation: { id, name }, toStation: { id, name }, event: { id, description, coinEffect }, coinsBefore, coinsAfter }] }`
+  - errors: `400` (game not planned) / `404` (game not found) with `{ error: string }`
+- POST `/api/games/:id/fail`
+  - requires login
+  - URL parameter: `id` - game id
+  - ends the game with a score of `0` (used when planning time expires or the submitted route is invalid/incomplete); marks the game `completed`
+  - response: `{ valid: true, gameId, status: 'completed', initialCoins, finalScore: 0, reason: string, execution: [] }`
+  - errors: `400` (game already completed) / `404` (game not found) with `{ error: string }`
+- GET `/api/ranking`
+  - requires login
+  - response: each user's best score, ordered: `[{ position, userId, username, bestScore }]`
 
 
 ## Database Tables
