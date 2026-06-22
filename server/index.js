@@ -81,8 +81,6 @@ function isLoggedIn(req, res, next) {
 }
 
 app.post('/api/login', (req, res, next) => {
-  console.log('Login body:', req.body);
-
   passport.authenticate('local', (err, user, info) => {
     if (err) {
       return next(err);

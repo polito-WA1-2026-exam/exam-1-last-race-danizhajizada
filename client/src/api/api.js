@@ -35,14 +35,6 @@ async function createGame() {
   return await getJson(response);
 }
 
-async function getGame(gameId) {
-  const response = await fetch(`${SERVER_URL}/games/${gameId}`, {
-    credentials: 'include',
-  });
-
-  return await getJson(response);
-}
-
 async function planGame(gameId, segmentIds) {
   const response = await fetch(`${SERVER_URL}/games/${gameId}/plan`, {
     method: 'POST',
@@ -76,7 +68,6 @@ export {
   getNetwork,
   getRanking,
   createGame,
-  getGame,
   planGame,
   runGame,
   failGame,

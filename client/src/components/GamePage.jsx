@@ -1,26 +1,31 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { Link } from 'react-router';
 import { Alert, Badge, Button, Card, ListGroup, Stack, Table } from 'react-bootstrap';
 import { GripVertical } from 'react-bootstrap-icons';
 
 import StationMap from './StationMap.jsx';
+import GameContext from '../contexts/GameContext.js';
 
-function GamePage({
-  network,
-  game,
-  timeLeft,
-  selectedSegments,
-  plannedRoute,
-  gameResult,
-  onPlay,
-  onPlanRoute,
-  onSelectSegment,
-  onRemoveSegment,
-  onReorderSegments,
-  onClearSegments,
-  onRunGame,
-  onHome,
-}) {
+function GamePage() {
+  const {
+    network,
+    game,
+    timeLeft,
+    selectedSegments,
+    plannedRoute,
+    gameResult,
+    revealedCount,
+    onRevealNextStep,
+    onPlay,
+    onPlanRoute,
+    onSelectSegment,
+    onRemoveSegment,
+    onReorderSegments,
+    onClearSegments,
+    onRunGame,
+    onHome,
+  } = useContext(GameContext);
+
   const [draggedIndex, setDraggedIndex] = useState(null);
 
   const segmentsById = new Map(
@@ -87,7 +92,7 @@ function GamePage({
 
               {selectedRoute.length === 0 ? (
                 <p className="text-muted">
-                  No segments selected yet. Use the “Add” buttons below to build
+                  No segments selected yet. Use the &ldquo;Add&rdquo; buttons below to build
                   your route in order.
                 </p>
               ) : (
@@ -201,13 +206,69 @@ function GamePage({
             </div>
           )}
 
-          {gameResult && (
+          {/* Execution phase: reveal the journey one step at a time. */}
+          {gameResult && (gameResult.execution ?? []).length > 0 && (
             <>
-              <h3 className="h5 mt-3">
-                {(gameResult.execution ?? []).length > 0
-                  ? 'Execution result'
-                  : 'Game result'}
-              </h3>
+              <h3 className="h5 mt-3">Execution</h3>
+
+              <ListGroup numbered className="mb-3">
+                {gameResult.execution.slice(0, revealedCount).map((step) => (
+                  <ListGroup.Item key={step.position}>
+                    <div>
+                      {step.fromStation.name} → {step.toStation.name} on{' '}
+                      {step.lineName}
+                    </div>
+                    <div>
+                      Event: {step.event.description} (
+                      {step.event.coinEffect > 0 ? '+' : ''}
+                      {step.event.coinEffect} coins)
+                    </div>
+                    <div>
+                      Coins: {step.coinsBefore} → {step.coinsAfter}
+                    </div>
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
+
+              {revealedCount < gameResult.execution.length ? (
+                <div className="text-center mb-3">
+                  <p>
+                    Coins so far:{' '}
+                    <strong>
+                      {gameResult.execution[revealedCount - 1].coinsAfter}
+                    </strong>
+                  </p>
+
+                  <Button onClick={onRevealNextStep}>
+                    Next step
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <p>
+                    Final score: <strong>{gameResult.finalScore}</strong>
+                  </p>
+
+                  <Stack gap={2} className="col-md-4 mx-auto mb-3">
+                    <Button onClick={onPlay}>Play Again</Button>
+
+                    <Button variant="outline-secondary" onClick={onHome}>
+                      Home
+                    </Button>
+
+                    <Button as={Link} to="/ranking" variant="outline-primary">
+                      View Rankings
+                    </Button>
+                  </Stack>
+                </>
+              )}
+            </>
+          )}
+
+          
+          {gameResult && (gameResult.execution ?? []).length === 0 && (
+            <>
+              <h3 className="h5 mt-3">Game result</h3>
 
               <p>
                 Final score: <strong>{gameResult.finalScore}</strong>
@@ -228,27 +289,6 @@ function GamePage({
                   View Rankings
                 </Button>
               </Stack>
-
-              {(gameResult.execution ?? []).length > 0 && (
-                <ListGroup numbered>
-                  {gameResult.execution.map((step) => (
-                    <ListGroup.Item key={step.position}>
-                      <div>
-                        {step.fromStation.name} → {step.toStation.name} on{' '}
-                        {step.lineName}
-                      </div>
-                      <div>
-                        Event: {step.event.description} (
-                        {step.event.coinEffect > 0 ? '+' : ''}
-                        {step.event.coinEffect} coins)
-                      </div>
-                      <div>
-                        Coins: {step.coinsBefore} → {step.coinsAfter}
-                      </div>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              )}
             </>
           )}
         </Card.Body>

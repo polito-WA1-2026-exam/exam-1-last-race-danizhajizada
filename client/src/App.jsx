@@ -11,11 +11,11 @@ import GamePage from './components/GamePage.jsx';
 import RankingPage from './components/RankingPage.jsx';
 
 import UserContext from './contexts/UserContext.js';
+import GameContext from './contexts/GameContext.js';
 
 import { logout, getCurrentUser } from './api/auth.js';
 import {
   getNetwork,
-  getRanking,
   createGame,
   planGame,
   runGame,
@@ -27,7 +27,6 @@ function App() {
 
   const [user, setUser] = useState(null);
   const [network, setNetwork] = useState(null);
-  const [ranking, setRanking] = useState([]);
   const [message, setMessage] = useState('');
   const [game, setGame] = useState(null);
   // Ordered list of segment ids selected for the current route.
@@ -35,6 +34,7 @@ function App() {
   const [plannedRoute, setPlannedRoute] = useState(null);
   const [gameResult, setGameResult] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [revealedCount, setRevealedCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Restore the session at startup.
@@ -43,7 +43,7 @@ function App() {
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
-        await loadPrivateData();
+        await loadNetwork();
       } catch {
         setUser(null);
       } finally {
@@ -54,17 +54,10 @@ function App() {
     loadInitialData();
   }, []);
 
-  async function loadPrivateData() {
+  async function loadNetwork() {
     try {
       const networkData = await getNetwork();
       setNetwork(networkData);
-    } catch (err) {
-      setMessage(err.message);
-    }
-
-    try {
-      const rankingData = await getRanking();
-      setRanking(rankingData);
     } catch (err) {
       setMessage(err.message);
     }
@@ -76,12 +69,13 @@ function App() {
     setPlannedRoute(null);
     setGameResult(null);
     setTimeLeft(0);
+    setRevealedCount(0);
   }
 
   async function handleLogin(loggedUser) {
     setUser(loggedUser);
     clearGameState();
-    await loadPrivateData();
+    await loadNetwork();
     setMessage(`Welcome, ${loggedUser.username}!`);
     navigate('/game');
   }
@@ -93,7 +87,6 @@ function App() {
       setUser(null);
       clearGameState();
       setNetwork(null);
-      setRanking([]);
       setMessage('');
       navigate('/');
     } catch (err) {
@@ -173,9 +166,6 @@ function App() {
       setGameResult({ ...result, reason });
       setGame({ ...game, status: result.status });
 
-      const rankingData = await getRanking();
-      setRanking(rankingData);
-
       setMessage('Time is over. Final score: 0');
     } catch (err) {
       setMessage(err.message);
@@ -209,6 +199,7 @@ function App() {
       setSelectedSegments([]);
       setPlannedRoute(null);
       setGameResult(null);
+      setRevealedCount(0);
 
       setTimeLeft(90);
 
@@ -242,9 +233,6 @@ function App() {
       setGameResult({ ...result, reason: 'Your submitted route was invalid.' });
       setGame({ ...game, status: result.status });
 
-      const rankingData = await getRanking();
-      setRanking(rankingData);
-
       setMessage('Your route was invalid. Final score: 0');
     }
   }
@@ -254,10 +242,8 @@ function App() {
       const result = await runGame(game.id);
 
       setGameResult(result);
+      setRevealedCount((result.execution?.length ?? 0) > 0 ? 1 : 0);
       setGame({ ...game, status: result.status });
-
-      const rankingData = await getRanking();
-      setRanking(rankingData);
 
       setMessage(`Game completed! Final score: ${result.finalScore}`);
     } catch (err) {
@@ -273,67 +259,61 @@ function App() {
     );
   }
 
+  const gameContextValue = {
+    network,
+    game,
+    timeLeft,
+    selectedSegments,
+    plannedRoute,
+    gameResult,
+    revealedCount,
+    onRevealNextStep: () => setRevealedCount((c) => c + 1),
+    onPlay: handlePlay,
+    onPlanRoute: handlePlanRoute,
+    onSelectSegment: handleSelectSegment,
+    onRemoveSegment: handleRemoveSegment,
+    onReorderSegments: handleReorderSegments,
+    onClearSegments: handleClearSegments,
+    onRunGame: handleRunGame,
+    onHome: handleBackToHome,
+  };
+
   return (
     <UserContext.Provider value={user}>
-      <Routes>
-        <Route
-          path="/"
-          element={<MainLayout onLogout={handleLogout} message={message} />}
-        >
+      <GameContext.Provider value={gameContextValue}>
+        <Routes>
           <Route
-            index
-            element={
-              user ? (
-                <Navigate to="/game" replace />
-              ) : (
-                <LoginForm onLogin={handleLogin} />
-              )
-            }
-          />
+            path="/"
+            element={<MainLayout onLogout={handleLogout} message={message} />}
+          >
+            <Route
+              index
+              element={
+                user ? (
+                  <Navigate to="/game" replace />
+                ) : (
+                  <LoginForm onLogin={handleLogin} />
+                )
+              }
+            />
 
-          <Route
-            path="game"
-            element={
-              user ? (
-                <GamePage
-                  network={network}
-                  game={game}
-                  timeLeft={timeLeft}
-                  selectedSegments={selectedSegments}
-                  plannedRoute={plannedRoute}
-                  gameResult={gameResult}
-                  onPlay={handlePlay}
-                  onPlanRoute={handlePlanRoute}
-                  onSelectSegment={handleSelectSegment}
-                  onRemoveSegment={handleRemoveSegment}
-                  onReorderSegments={handleReorderSegments}
-                  onClearSegments={handleClearSegments}
-                  onRunGame={handleRunGame}
-                  onHome={handleBackToHome}
-                />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+            <Route
+              path="game"
+              element={user ? <GamePage /> : <Navigate to="/" replace />}
+            />
 
-          <Route
-            path="ranking"
-            element={
-              user ? (
-                <RankingPage ranking={ranking} />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            }
-          />
+            <Route
+              path="ranking"
+              element={user ? <RankingPage /> : <Navigate to="/" replace />}
+            />
 
-          <Route
-            path="*"
-            element={<Navigate to={user ? '/game' : '/'} replace />}
-          />
-        </Route>
-      </Routes>
+            <Route
+              path="*"
+              element={<Navigate to={user ? '/game' : '/'} replace />}
+            />
+          </Route>
+        </Routes>
+      </GameContext.Provider>
     </UserContext.Provider>
   );
 }

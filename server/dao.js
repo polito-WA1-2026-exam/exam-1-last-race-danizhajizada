@@ -492,10 +492,8 @@ export async function createGame(userId) {
  
   return {
     id: result.id,
-    user_id: userId,
     startStation: randomPair.start,
     destinationStation: randomPair.destination,
-    minimumDistance: randomPair.distance,
     initialCoins: 20,
     status: 'created',
   };

@@ -1,7 +1,19 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { Button, Card, Table } from 'react-bootstrap';
+import { Button, Card, Spinner, Table } from 'react-bootstrap';
 
-function RankingPage({ ranking }) {
+import { getRanking } from '../api/api.js';
+
+function RankingPage() {
+  const [ranking, setRanking] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getRanking()
+      .then(setRanking)
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <Card className="mb-3">
       <Card.Body>
@@ -15,7 +27,11 @@ function RankingPage({ ranking }) {
           </Card.Title>
         </div>
 
-        {ranking.length === 0 ? (
+        {loading ? (
+          <div className="text-center">
+            <Spinner animation="border" size="sm" />
+          </div>
+        ) : ranking.length === 0 ? (
           <p className="text-center text-muted">No completed games yet.</p>
         ) : (
           <Table striped bordered hover>
